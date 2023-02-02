@@ -59,6 +59,45 @@ class Number:
                 return None, RTError(other.pos_start, other.pos_end, 'Division by zero', self.context)
             return Number(self.value / other.value).set_context(self.context).set_pos(self.pos_start,
                                                                                       other.pos_end), None
+    def eq(self, other):
+        if isinstance(other, Number):
+            return Number(int(self.value == other.value)).set_context(self.context).set_pos(self.pos_start,
+                                                                                           other.pos_end), None
+    def neq(self, other):
+        if isinstance(other, Number):
+            return Number(int(self.value != other.value)).set_context(self.context).set_pos(self.pos_start,
+                                                                                            other.pos_end), None
+    def gt(self, other):
+        if isinstance(other, Number):
+            return Number(int(self.value > other.value)).set_context(self.context).set_pos(self.pos_start,
+                                                                                            other.pos_end), None
+
+    def gte(self, other):
+        if isinstance(other, Number):
+            return Number(int(self.value >= other.value)).set_context(self.context).set_pos(self.pos_start,
+                                                                                           other.pos_end), None
+    def lt(self, other):
+        if isinstance(other, Number):
+            return Number(int(self.value < other.value)).set_context(self.context).set_pos(self.pos_start,
+                                                                                            other.pos_end), None
+
+    def lte(self, other):
+        if isinstance(other, Number):
+            return Number(int(self.value <= other.value)).set_context(self.context).set_pos(self.pos_start,
+                                                                                           other.pos_end), None
+
+    def and_(self, other):
+        if isinstance(other, Number):
+            return Number(int(self.value and other.value)).set_context(self.context).set_pos(self.pos_start,
+                                                                                            other.pos_end), None
+
+    def notted(self):
+        return Number(int(not self.value)).set_context(self.context).set_pos(self.pos_start,
+                                                                                             self.pos_end), None
+    def or_(self, other):
+        if isinstance(other, Number):
+            return Number(int(self.value or other.value)).set_context(self.context).set_pos(self.pos_start,
+                                                                                             other.pos_end), None
 
     def __repr__(self):
         return str(self.value)
@@ -140,6 +179,22 @@ class Interpreter:
             result, error = left.multed_by(right)
         elif node.op_token.type == TokenType.DIVIDE:
             result, error = left.dived_by(right)
+        elif node.op_token.type == TokenType.EEQ:
+            result, error = left.eq(right)
+        elif node.op_token.type == TokenType.NE:
+            result, error = left.neq(right)
+        elif node.op_token.type == TokenType.LT:
+            result, error = left.lt(right)
+        elif node.op_token.type == TokenType.GT:
+            result, error = left.gt(right)
+        elif node.op_token.type == TokenType.LTE:
+            result, error = left.lte(right)
+        elif node.op_token.type == TokenType.GTE:
+            result, error = left.gte(right)
+        elif node.op_token.matches(TokenType.KEYWORD, 'AND'):
+            result, error = left.and_(right)
+        elif node.op_token.matches(TokenType.KEYWORD, 'OR'):
+            result, error = left.or_(right)
         if error:
             return res.failure(error)
         return res.success(result.set_pos(node.pos_start, node.pos_end))
@@ -151,7 +206,10 @@ class Interpreter:
         error = None
         if node.op_token.type == TokenType.MINUS:
             number, error = number.multed_by(Number(-1))
+        elif node.op_token.matches(TokenType.KEYWORD, 'NOT'):
+            number, error = number.notted()
+
         if error:
-            res.failure(error)
+            return res.failure(error)
         else:
-            res.success(number.set_pos(node.pos_start, node.pos_end))
+            return res.success(number.set_pos(node.pos_start, node.pos_end))

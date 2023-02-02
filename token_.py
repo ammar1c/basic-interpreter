@@ -33,6 +33,8 @@ class Token:
             self.pos_end.advance()
         if pos_end:
             self.pos_end = pos_end
+    def matches(self, type_, value):
+        return self.type == type_ and self.value == value
 
     def __repr__(self):
         return f"{self.type}" + (f":{self.value}" if self.value != None else "")
