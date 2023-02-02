@@ -1,5 +1,5 @@
 from interpreter import KEYWORDS
-from error import IllegalCharError
+from error import IllegalCharError, ExpectedCharError
 from position import Position
 from token_ import Token, TokenType
 
@@ -64,8 +64,16 @@ class Lexer:
                 tokens.append(Token(TokenType.RPAREN, pos_start=self.pos))
                 self.advance()
             elif self.current_char == '=':
-                tokens.append(Token(TokenType.EQUALS, pos_start=self.pos))
-                self.advance()
+                tokens.append(self.make_equals())
+            elif self.current_char == '!':
+                tok, error = self.make_not_equals()
+                if error:
+                    return [], error
+                tokens.append(tok)
+            elif self.current_char == '<':
+                tokens.append(self.make_less_than())
+            elif self.current_char == '>':
+                tokens.append(self.make_greater_than())
             else:
                 pos_start = self.pos.copy()
                 char = self.current_char
@@ -82,3 +90,37 @@ class Lexer:
             self.advance()
         tok_type = TokenType.KEYWORD if id_str in KEYWORDS else TokenType.IDENTIFIER
         return Token(tok_type, id_str, pos_start, self.pos)
+
+    def make_not_equals(self):
+        pos_start = self.pos.copy()
+        self.advance()
+        if self.current_char == '=':
+            self.advance()
+            return Token(TokenType.NE, pos_start=pos_start, pos_end=self.pos), None
+        self.advance()
+        return None, ExpectedCharError(pos_start, self.pos, "Expected '=' after '!'")
+    def make_equals(self):
+        pos_start = self.pos.copy()
+        self.advance()
+        if self.current_char == '=':
+            self.advance()
+            return Token(TokenType.EEQ, pos_start=pos_start, pos_end=self.pos)
+        return Token(TokenType.EQUALS, pos_start=pos_start, pos_end=self.pos)
+
+    def make_less_than(self):
+        pos_start = self.pos.copy()
+        self.advance()
+        if self.current_char == '=':
+            self.advance()
+            return Token(TokenType.LTE, pos_start=pos_start, pos_end=self.pos)
+        return Token(TokenType.LT, pos_start=pos_start, pos_end=self.pos)
+
+    def make_greater_than(self):
+        pos_start = self.pos.copy()
+        self.advance()
+        if self.current_char == '=':
+            self.advance()
+            return Token(TokenType.GTE, pos_start=pos_start, pos_end=self.pos)
+        return Token(TokenType.GT, pos_start=pos_start, pos_end=self.pos)
+
+

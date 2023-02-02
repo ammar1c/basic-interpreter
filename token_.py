@@ -14,6 +14,13 @@ class TokenType(Enum):
     KEYWORD = 9
     EQUALS = 10
     IDENTIFIER = 11
+    EEQ = 12
+    NE = 13
+    LT = 14
+    GT = 15
+    LTE = 16
+    GTE = 17
+
 
 
 class Token:

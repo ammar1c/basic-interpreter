@@ -1,7 +1,7 @@
 from error import RTError
 from token_ import TokenType
 
-KEYWORDS = ["VAR"]
+KEYWORDS = ["VAR", "AND", "OR", "NOT"]
 
 
 class RTResult:

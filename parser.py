@@ -7,11 +7,13 @@ class ParseResult:
     def __init__(self):
         self.error = None
         self.node = None
+        self.advance_count = 0
 
     def register_advancement(self):
-        pass
+        self.advance_count += 1
 
     def register(self, res):
+        self.advance_count += res.advance_count
         if res.error:
             self.error = res.error
         return res.node
@@ -21,7 +23,8 @@ class ParseResult:
         return self
 
     def failure(self, error):
-        self.error = error
+        if not self.error or self.advance_count == 0:
+            self.error = error
         return self
 
 
@@ -82,7 +85,7 @@ class Parser:
     def expr(self):
         res = ParseResult()
         if self.matches(TokenType.KEYWORD, 'VAR'):
-            res.register_advancement();
+            res.register_advancement()
             self.advance()
             if self.current_token.type != TokenType.IDENTIFIER:
                 return res.failure(InvalidSyntaxError(
@@ -90,7 +93,7 @@ class Parser:
                     "Expected identifier"
                 ))
             var_name = self.current_token
-            res.register_advancement();
+            res.register_advancement()
             self.advance()
             if self.current_token.type != TokenType.EQUALS:
                 return res.failure(InvalidSyntaxError(
@@ -103,13 +106,13 @@ class Parser:
             if res.error:
                 return res
             return res.success(VarAssignNode(var_name, expr))
-        node = self.bin_op(self.term, (TokenType.PLUS, TokenType.MINUS))
+        node = res.register(self.bin_op(self.term, (TokenType.PLUS, TokenType.MINUS)))
         if res.error:
             return res.failure(InvalidSyntaxError(
                 self.current_token.pos_start, self.current_token.pos_end,
                 "Expected 'VAR', int or float or identifier, '+', '-' or '('"
             ))
-        return node
+        return res.success(node)
 
     def bin_op(self, func_a, ops):
         res = ParseResult()
