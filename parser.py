@@ -100,13 +100,13 @@ class Parser:
                     self.current_token.pos_start, self.current_token.pos_end,
                     "Expected '='"
                 ))
-            res.register_advancement();
+            res.register_advancement()
             self.advance()
             expr = res.register(self.expr())
             if res.error:
                 return res
             return res.success(VarAssignNode(var_name, expr))
-        node = res.register(self.bin_op(self.term, (TokenType.PLUS, TokenType.MINUS)))
+        node = res.register(self.bin_op(self.comp_expr, ((TokenType.KEYWORD, "AND"), (TokenType.KEYWORD, "OR"))))
         if res.error:
             return res.failure(InvalidSyntaxError(
                 self.current_token.pos_start, self.current_token.pos_end,
@@ -114,11 +114,31 @@ class Parser:
             ))
         return res.success(node)
 
+    def comp_expr(self):
+        res = ParseResult()
+        if self.matches(TokenType.KEYWORD, 'NOT'):
+            op_token = self.current_token
+            res.register_advancement()
+            self.advance()
+            node = res.register(self.comp_expr())
+            if res.error:
+                return res
+            return res.success(UnaryOpNode(op_token, node))
+        node = res.register(self.bin_op(self.arith_expr, (TokenType.EEQ, TokenType.NE, TokenType.LT, TokenType.GT, TokenType.LTE, TokenType.GTE)))
+        if res.error:
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected int, float, identifier, '+', '-', '(' or 'NOT'"
+            ))
+        return res.success(node)
+    def arith_expr(self):
+        return self.bin_op(self.term, (TokenType.PLUS, TokenType.MINUS))
+
     def bin_op(self, func_a, ops):
         res = ParseResult()
         left = res.register(func_a())
         if res.error: return res
-        while self.current_token.type in ops:
+        while self.current_token.type in ops or (self.current_token.type, self.current_token.value) in ops:
             op_token = self.current_token
             res.register_advancement()
             self.advance()
