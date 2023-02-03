@@ -53,12 +53,12 @@ class UnaryOpNode:
 
 
 class IfNode:
-    def __init__(self, condition, if_body, else_body=None):
-        self.condition = condition
-        self.if_body = if_body
-        self.else_body = else_body
-        self.pos_start = self.condition.pos_start
-        self.pos_end = self.else_body.pos_end if self.else_body else self.if_body.pos_end
+    def __init__(self, cases, else_case=None):
+
+        self.cases = cases
+        self.else_case = else_case
+        self.pos_start = self.cases[0][0].pos_start
+        self.pos_end = self.else_case.pos_end if self.else_case else self.cases[-1][0].pos_end
 
     def __repr__(self):
-        return f"If({self.condition}, {self.if_body}, {self.else_body})"
+        return f"if {self.cases} else {self.else_case}"

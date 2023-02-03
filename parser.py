@@ -44,6 +44,11 @@ class Parser:
         res = ParseResult()
         toke = self.current_token
 
+        if self.matches(TokenType.KEYWORD, 'IF'):
+            if_res = res.register(self.if_expr())
+            if res.error:
+                return res
+            return res.success(if_res)
         if toke.type == TokenType.IDENTIFIER:
             res.register_advancement();
             self.advance()
@@ -76,6 +81,57 @@ class Parser:
                 ))
         return res.failure(InvalidSyntaxError(toke.pos_start, toke.pos_end, "Expected int or float or identifer"))
 
+    def if_expr(self):
+        res = ParseResult()
+        cases = []
+        if not self.matches(TokenType.KEYWORD, 'IF'):
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected 'IF'"
+            ))
+        res.register_advancement()
+        self.advance()
+        cond = res.register(self.expr())
+        if res.error:
+            return res
+        if not self.matches(TokenType.KEYWORD, 'THEN'):
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected 'THEN'"
+            ))
+        res.register_advancement()
+        self.advance()
+        expr = res.register(self.expr())
+        if res.error:
+            return res
+        cases.append((cond, expr))
+        while self.matches(TokenType.KEYWORD, 'ELIF'):
+            res.register_advancement()
+            self.advance()
+            cond = res.register(self.expr())
+            if res.error:
+                return res
+            if not self.matches(TokenType.KEYWORD, 'THEN'):
+                return res.failure(InvalidSyntaxError(
+                    self.current_token.pos_start, self.current_token.pos_end,
+                    "Expected 'THEN'"
+                ))
+            res.register_advancement()
+            self.advance()
+            expr = res.register(self.expr())
+            if res.error:
+                return res
+            cases.append((cond, expr))
+        else_case = None
+        if self.matches(TokenType.KEYWORD, 'ELSE'):
+            res.register_advancement()
+            self.advance()
+            else_case = res.register(self.expr())
+            if res.error:
+                return res
+
+        return res.success(IfNode(cases, else_case))
+
     def term(self):
         return self.bin_op(self.factor, (TokenType.MULTIPLY, TokenType.DIVIDE))
 
@@ -106,30 +162,7 @@ class Parser:
             if res.error:
                 return res
             return res.success(VarAssignNode(var_name, expr))
-        if self.matches(TokenType.KEYWORD, 'IF'):
-            res.register_advancement()
-            self.advance()
-            cond = res.register(self.expr())
-            if res.error:
-                return res
-            if not self.matches(TokenType.KEYWORD, 'THEN'):
-                return res.failure(InvalidSyntaxError(
-                    self.current_token.pos_start, self.current_token.pos_end,
-                    "Expected 'THEN'"
-                ))
-            res.register_advancement()
-            self.advance()
-            ifres = res.register(self.expr())
-            if res.error:
-                return res
-            if self.matches(TokenType.KEYWORD, 'ELSE'):
-                res.register_advancement()
-                self.advance()
-                else_res = res.register(self.expr())
-                if res.error:
-                    return res
-                return res.success(IfNode(cond, ifres, else_res))
-            return res.success(IfNode(cond, ifres))
+
         node = res.register(self.bin_op(self.comp_expr, ((TokenType.KEYWORD, "AND"), (TokenType.KEYWORD, "OR"))))
         if res.error:
             return res.failure(InvalidSyntaxError(

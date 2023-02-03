@@ -1,8 +1,12 @@
 
-
 expr: KEYWORD:VAR IDENTIFIER EQ expr
      | comp-expr ((KEYWORD:AND|KEYWORD:OR) comp-expr)*)
 comp-expr: NOT comp-expr | arith-expr ((EE|LT|GT|LTE|GTE) arith-expr)*
 arith-expr: term ((PLUS|MINUS) term)*
 term: factor ((MUL|DIV) factor)*
-factor: INT|FLOAT|IDENTIFER | LPAREN expr RPAREN | MINUS factor | PLUS factor
+factor: INT|FLOAT|IDENTIFER |
+        LPAREN expr RPAREN | MINUS factor | PLUS factor
+        : if-expr
+if-expr: KEYWORD:IF expr KEYWORD:THEN expr
+         (KEYWORD:ELIF expr KEYWORD:THEN expr)?
+         (KEYWORD:ELSE expr)?

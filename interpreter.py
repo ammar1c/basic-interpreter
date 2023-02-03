@@ -153,17 +153,22 @@ class Interpreter:
 
     def visit_IfNode(self, node, context):
         res = RTResult()
-        val = res.register(self.interpret(node.condition, context))
-        if res.error:
-            return res
+        for condition, expr in node.cases:
+            condition_value = res.register(self.interpret(condition, context))
+            if res.error:
+                return res
+            if condition_value.value:
+                expr_value = res.register(self.interpret(expr, context))
+                if res.error:
+                    return res
+                return res.success(expr_value)
+        if node.else_case:
+            else_value = res.register(self.interpret(node.else_case, context))
+            if res.error:
+                return res
+            return res.success(else_value)
+        return res.success(0)
 
-        if val.value:
-            res1 = res.register(self.interpret(node.if_body, context))
-        elif node.else_body:
-            res1 = res.register(self.interpret(node.else_body, context))
-        else:
-            res1 = None
-        return res.success(res1)
     def visit_VarAssignNode(self, node, context):
         res = RTResult()
         var_name = node.var_name_token.value
