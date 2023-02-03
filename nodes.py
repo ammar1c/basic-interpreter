@@ -50,3 +50,15 @@ class UnaryOpNode:
 
     def __repr__(self):
         return f"({self.op_token}, {self.node})"
+
+
+class IfNode:
+    def __init__(self, condition, if_body, else_body=None):
+        self.condition = condition
+        self.if_body = if_body
+        self.else_body = else_body
+        self.pos_start = self.condition.pos_start
+        self.pos_end = self.else_body.pos_end if self.else_body else self.if_body.pos_end
+
+    def __repr__(self):
+        return f"If({self.condition}, {self.if_body}, {self.else_body})"

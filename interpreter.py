@@ -1,7 +1,7 @@
 from error import RTError
 from token_ import TokenType
 
-KEYWORDS = ["VAR", "AND", "OR", "NOT"]
+KEYWORDS = ["VAR", "AND", "OR", "NOT", "IF", "THEN", "ELSE", "ELIF"]
 
 
 class RTResult:
@@ -151,6 +151,19 @@ class Interpreter:
             ))
         return res.success(value)
 
+    def visit_IfNode(self, node, context):
+        res = RTResult()
+        val = res.register(self.interpret(node.condition, context))
+        if res.error:
+            return res
+
+        if val.value:
+            res1 = res.register(self.interpret(node.if_body, context))
+        elif node.else_body:
+            res1 = res.register(self.interpret(node.else_body, context))
+        else:
+            res1 = None
+        return res.success(res1)
     def visit_VarAssignNode(self, node, context):
         res = RTResult()
         var_name = node.var_name_token.value

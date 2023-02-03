@@ -1,5 +1,5 @@
 from error import InvalidSyntaxError
-from nodes import VarAccessNode, UnaryOpNode, NumberNode, VarAssignNode, BinOpNode
+from nodes import VarAccessNode, UnaryOpNode, NumberNode, VarAssignNode, BinOpNode, IfNode
 from token_ import TokenType
 
 
@@ -106,6 +106,30 @@ class Parser:
             if res.error:
                 return res
             return res.success(VarAssignNode(var_name, expr))
+        if self.matches(TokenType.KEYWORD, 'IF'):
+            res.register_advancement()
+            self.advance()
+            cond = res.register(self.expr())
+            if res.error:
+                return res
+            if not self.matches(TokenType.KEYWORD, 'THEN'):
+                return res.failure(InvalidSyntaxError(
+                    self.current_token.pos_start, self.current_token.pos_end,
+                    "Expected 'THEN'"
+                ))
+            res.register_advancement()
+            self.advance()
+            ifres = res.register(self.expr())
+            if res.error:
+                return res
+            if self.matches(TokenType.KEYWORD, 'ELSE'):
+                res.register_advancement()
+                self.advance()
+                else_res = res.register(self.expr())
+                if res.error:
+                    return res
+                return res.success(IfNode(cond, ifres, else_res))
+            return res.success(IfNode(cond, ifres))
         node = res.register(self.bin_op(self.comp_expr, ((TokenType.KEYWORD, "AND"), (TokenType.KEYWORD, "OR"))))
         if res.error:
             return res.failure(InvalidSyntaxError(
