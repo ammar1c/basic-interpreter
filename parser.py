@@ -1,5 +1,6 @@
+import interpreter
 from error import InvalidSyntaxError
-from nodes import VarAccessNode, UnaryOpNode, NumberNode, VarAssignNode, BinOpNode, IfNode
+from nodes import VarAccessNode, UnaryOpNode, NumberNode, VarAssignNode, BinOpNode, IfNode, WhileNode, ForNode
 from token_ import TokenType
 
 
@@ -49,8 +50,18 @@ class Parser:
             if res.error:
                 return res
             return res.success(if_res)
+        elif self.matches(TokenType.KEYWORD, "FOR"):
+            if_res = res.register(self.for_expr())
+            if res.error:
+                return res
+            return res.success(if_res)
+        elif self.matches(TokenType.KEYWORD, "WHILE"):
+            if_res = res.register(self.while_expr())
+            if res.error:
+                return res
+            return res.success(if_res)
         if toke.type == TokenType.IDENTIFIER:
-            res.register_advancement();
+            res.register_advancement()
             self.advance()
             return res.success(VarAccessNode(toke))
         if toke.type in (TokenType.PLUS, TokenType.MINUS):
@@ -210,3 +221,95 @@ class Parser:
             return res.failure(
                 InvalidSyntaxError(self.current_token.pos_start, self.current_token.pos_end, "Expected +-*/"))
         return res
+
+    def for_expr(self):
+        res = ParseResult()
+        if not self.matches(TokenType.KEYWORD, 'FOR'):
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected 'FOR'"
+            ))
+        res.register_advancement()
+        self.advance()
+        if (self.current_token.type != TokenType.IDENTIFIER) or (self.current_token.value in interpreter.KEYWORDS):
+            print(self.current_token)
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected identifier"
+            ))
+        var_name = self.current_token
+        res.register_advancement()
+        self.advance()
+        if not self.current_token.type != TokenType.EEQ:
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected = "
+            ))
+        res.register_advancement()
+        self.advance()
+        var_start = res.register(self.expr())
+        if res.error:
+            return res
+        if not self.matches(TokenType.KEYWORD, 'TO'):
+            return res.failure(
+                InvalidSyntaxError(
+                    self.current_token.pos_start, self.current_token.pos_end,
+                    "Expected keyword 'TO'"
+                )
+            )
+        res.register_advancement()
+        self.advance()
+        to_end = res.register(self.expr())
+        if res.error:
+            return res
+        step = None
+        if self.matches(TokenType.KEYWORD, "STEP"):
+            res.register_advancement()
+            self.advance()
+            step = res.register(self.expr())
+            if res.error:
+                return res
+        if not self.matches(TokenType.KEYWORD, "THEN"):
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected = "
+            ))
+        res.register_advancement()
+        self.advance()
+        body = res.register(self.expr())
+        if res.error:
+            return res
+        return res.success(ForNode(
+            var_name_tok=var_name,
+            start_value_node=var_start,
+            end_value_node=to_end,
+            step_value_node=step if step else None,
+            body_value_node=body
+        ))
+
+    def while_expr(self):
+        res = ParseResult()
+
+        if not self.matches(TokenType.KEYWORD, 'WHILE'):
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected 'WHILE'"
+            ))
+        res.register_advancement()
+        self.advance()
+        expr = self.expr()
+
+        if res.error:
+            return res
+        if not self.matches(TokenType.KEYWORD, 'THEN'):
+            return res.failure(InvalidSyntaxError(
+                self.current_token.pos_start, self.current_token.pos_end,
+                "Expected 'THEN'"
+            ))
+
+        res.register_advancement()
+        self.advance()
+        body = self.expr()
+        if res.error:
+            return res
+        return res.success(WhileNode(expr.node, body.node))

@@ -7,6 +7,11 @@ term: factor ((MUL|DIV) factor)*
 factor: INT|FLOAT|IDENTIFER |
         LPAREN expr RPAREN | MINUS factor | PLUS factor
         : if-expr
+        : for-expr
+        : while-expr
+for_expr: keyword:for identifer EQ expr keyword:to expr (keyword:step)?
+          keyword:then expr
+
 if-expr: KEYWORD:IF expr KEYWORD:THEN expr
          (KEYWORD:ELIF expr KEYWORD:THEN expr)?
          (KEYWORD:ELSE expr)?

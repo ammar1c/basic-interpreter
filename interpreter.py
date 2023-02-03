@@ -1,7 +1,8 @@
 from error import RTError
 from token_ import TokenType
 
-KEYWORDS = ["VAR", "AND", "OR", "NOT", "IF", "THEN", "ELSE", "ELIF"]
+KEYWORDS = ["VAR", "AND", "OR", "NOT", "IF",
+            "THEN", "ELSE", "ELIF", "FOR", "TO", "STEP", "WHILE"]
 
 
 class RTResult:
@@ -216,6 +217,39 @@ class Interpreter:
         if error:
             return res.failure(error)
         return res.success(result.set_pos(node.pos_start, node.pos_end))
+
+    def visit_ForNode(self, node, context):
+        res = RTResult()
+        start = res.register(self.interpret(node.start_value_node, context))
+        if res.error: return res
+        end = res.register(self.interpret(node.end_value_node, context))
+        if res.error: return res
+        context.symbol_table.set(node.var_name_tok.value, Number(start))
+        step = res.register(self.interpret(node.step_value_node, context) if node.step_value_node else RTResult().success(Number(1)))
+        if res.error: return res
+        final_res = None
+        print(start, end, step)
+        for x in range(start.value, end.value, step.value):
+            context.symbol_table.set(node.var_name_tok.value, Number(x))
+            final_res = res.register(self.interpret(node.body_value_node, context))
+            if res.error: return res
+        context.symbol_table.remove(node.var_name_tok.value)
+        return res.success(final_res)
+
+    def visit_WhileNode(self, node, context):
+        res = RTResult()
+        val = res.register(self.interpret(node.condition_node, context))
+        if res.error: return res
+        final_res = None
+        while val.value:
+            final_res = res.register(self.interpret(node.body_node, context))
+            if res.error: return res
+            val = res.register(self.interpret(node.condition_node, context))
+        return res.success(final_res)
+
+
+
+
 
     def visit_UnaryOpNode(self, node, context):
         res = RTResult()
