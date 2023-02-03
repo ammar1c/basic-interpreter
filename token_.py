@@ -20,6 +20,8 @@ class TokenType(Enum):
     GT = 15
     LTE = 16
     GTE = 17
+    COMMA = 18
+    ARROW = 19
 
 
 

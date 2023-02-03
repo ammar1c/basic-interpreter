@@ -4,14 +4,22 @@ expr: KEYWORD:VAR IDENTIFIER EQ expr
 comp-expr: NOT comp-expr | arith-expr ((EE|LT|GT|LTE|GTE) arith-expr)*
 arith-expr: term ((PLUS|MINUS) term)*
 term: factor ((MUL|DIV) factor)*
+
+call : factor (LPAREN (expr (COMMA IDENTIFIER)*)? RPAREN)?
+
 factor: INT|FLOAT|IDENTIFER |
         LPAREN expr RPAREN | MINUS factor | PLUS factor
         : if-expr
         : for-expr
         : while-expr
+        : func-def
+
 for_expr: keyword:for identifer EQ expr keyword:to expr (keyword:step)?
           keyword:then expr
 
 if-expr: KEYWORD:IF expr KEYWORD:THEN expr
          (KEYWORD:ELIF expr KEYWORD:THEN expr)?
          (KEYWORD:ELSE expr)?
+
+func-def: Keyword:fun identifier? LPAREN (IDENTIFIER (COMMA IDENTIFIER)*)? RPAREN ARROW expr
+
