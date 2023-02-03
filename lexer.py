@@ -48,6 +48,8 @@ class Lexer:
             elif self.current_char == '+':
                 tokens.append(Token(TokenType.PLUS, pos_start=self.pos))
                 self.advance()
+            elif self.current_char == '"':
+                tokens.append(self.make_string())
             elif self.current_char == '-':
                 tokens.append(self.make_minus_or_arrow())
             elif self.current_char == '*':
@@ -133,5 +135,28 @@ class Lexer:
             self.advance()
             tok_type = TokenType.ARROW
         return Token(tok_type, pos_start=pos_start, pos_end=self.pos)
+
+    def make_string(self):
+        string = ''
+        pos_start = self.pos.copy()
+        escape_character = False
+        self.advance()
+        escape_characters = {
+            'n': '\n',
+            't': '\t'
+        }
+        while self.current_char and (self.current_char != '"' or escape_character):
+            if escape_character:
+                string += escape_characters.get(self.current_char, self.current_char)
+            else:
+                if self.current_char == '\\':
+                    escape_character = True
+                else:
+                    string += self.current_char
+
+            self.advance()
+            escape_character = False
+        self.advance()
+        return Token(TokenType.STRING, string, pos_start, self.pos)
 
 

@@ -185,6 +185,35 @@ class Function(Value):
     def __repr__(self):
         return f"<function {self.name}>"
 
+
+class String(Value):
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
+    def added_to(self, other):
+        if isinstance(other, String):
+            return String(self.value + other.value).set_context(self.context).set_pos(self.pos_start,
+                                                                                      other.pos_end), None
+        else:
+            return None, Value.illegal_operation(self, other)
+    def multed_by(self, other):
+        if isinstance(other, Number):
+            return String(self.value * other.value).set_context(self.context).set_pos(self.pos_start,
+                                                                                      other.pos_end), None
+        else:
+            return None, Value.illegal_operation(self, other)
+    def is_true(self):
+        return len(self.value) > 0
+
+    def copy(self):
+        copy = String(self.value)
+        copy.set_context(self.context)
+        copy.set_pos(self.pos_start, self.pos_end)
+        return copy
+
+    def __repr__(self):
+        return f'"{self.value}"'
+
 class Context:
     def __init__(self, display_name, parent=None, parent_entry_pos=None):
         self.display_name = display_name
@@ -234,6 +263,10 @@ class Interpreter:
             ))
         return res.success(value)
 
+    def visit_StringNode(self, node, context):
+        return RTResult().success(
+            String(node.token.value).set_context(context).set_pos(node.pos_start, node.pos_end)
+        )
     def visit_IfNode(self, node, context):
         res = RTResult()
         for condition, expr in node.cases:

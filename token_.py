@@ -22,7 +22,7 @@ class TokenType(Enum):
     GTE = 17
     COMMA = 18
     ARROW = 19
-
+    STRING = 20
 
 
 class Token:

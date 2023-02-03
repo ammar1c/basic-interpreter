@@ -1,7 +1,7 @@
 import interpreter
 from error import InvalidSyntaxError
 from nodes import VarAccessNode, UnaryOpNode, NumberNode, VarAssignNode, BinOpNode, IfNode, WhileNode, ForNode, \
-    FuncDefNode, CallNode
+    FuncDefNode, CallNode, StringNode
 from token_ import TokenType
 
 
@@ -115,6 +115,10 @@ class Parser:
             res.register_advancement();
             self.advance()
             return res.success(NumberNode(toke))
+        elif toke.type == TokenType.STRING:
+            res.register_advancement()
+            self.advance()
+            return res.success(StringNode(toke))
         elif toke.type == TokenType.LPAREN:
             res.register_advancement();
             self.advance()
