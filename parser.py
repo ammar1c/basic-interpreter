@@ -1,7 +1,7 @@
 import interpreter
 from error import InvalidSyntaxError
 from nodes import VarAccessNode, UnaryOpNode, NumberNode, VarAssignNode, BinOpNode, IfNode, WhileNode, ForNode, \
-    FuncDefNode, CallNode, StringNode
+    FuncDefNode, CallNode, StringNode, ListNode
 from token_ import TokenType
 
 
@@ -119,6 +119,11 @@ class Parser:
             res.register_advancement()
             self.advance()
             return res.success(StringNode(toke))
+        elif toke.type == TokenType.LSQAURE:
+            list = res.register(self.list_expr())
+            if res.error:
+                return res
+            return res.success(list)
         elif toke.type == TokenType.LPAREN:
             res.register_advancement();
             self.advance()
@@ -222,7 +227,7 @@ class Parser:
         if res.error:
             return res.failure(InvalidSyntaxError(
                 self.current_token.pos_start, self.current_token.pos_end,
-                "Expected 'VAR', 'IF', 'FOR', 'WHILE', 'FUN', int or float or identifier, '+', '-' or '('"
+                "Expected 'VAR', 'IF', 'FOR', 'WHILE', 'FUN', int or float or identifier, '+', '-' or '(' or '['"
             ))
         return res.success(node)
 
@@ -241,7 +246,7 @@ class Parser:
         if res.error:
             return res.failure(InvalidSyntaxError(
                 self.current_token.pos_start, self.current_token.pos_end,
-                "Expected int, float, identifier, '+', '-', '(' or 'NOT'"
+                "Expected int, float, identifier, '+', '-', '(', '[' or 'NOT'"
             ))
         return res.success(node)
 
@@ -431,3 +436,35 @@ class Parser:
             var_name_tok=var_name_tok,
             arg_name_toks=arg_name_toks,
             body_node=node_to_return))
+
+    def list_expr(self):
+        res = ParseResult()
+        pos_start = self.current_token.pos_start.copy()
+        res.register_advancement()
+        self.advance()
+
+        arg_nodes = []
+        if self.current_token.type == TokenType.RSQUARE:
+            res.register_advancement()
+            self.advance()
+        else:
+            arg_nodes.append(res.register(self.expr()))
+            if res.error:
+                return res.failure(InvalidSyntaxError(
+                    self.current_token.pos_start, self.current_token.pos_end,
+                    "Expected ']', 'VAR', int, float, identifier"
+                ))
+            while self.current_token.type == TokenType.COMMA:
+                res.register_advancement()
+                self.advance()
+                arg_nodes.append(res.register(self.expr()))
+                if res.error:
+                    return res
+            if self.current_token.type != TokenType.RSQUARE:
+                return res.failure(InvalidSyntaxError(
+                    self.current_token.pos_start, self.current_token.pos_end,
+                    f"Expected ',' or ']'"
+                ))
+            res.register_advancement()
+            self.advance()
+        return res.success(ListNode(arg_nodes, pos_start=pos_start, pos_end=self.current_token.pos_end.copy()))

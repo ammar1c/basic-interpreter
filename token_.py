@@ -23,6 +23,8 @@ class TokenType(Enum):
     COMMA = 18
     ARROW = 19
     STRING = 20
+    LSQAURE = 21
+    RSQUARE = 22
 
 
 class Token:

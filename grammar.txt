@@ -11,9 +11,11 @@ factor: INT|FLOAT|IDENTIFER |
         LPAREN expr RPAREN | MINUS factor | PLUS factor
         : if-expr
         : for-expr
+        : list-expr
         : while-expr
         : func-def
 
+list_expr: LSQUARE (expr (COMMA IDENTIFIER)*)? RSQUARE
 for_expr: keyword:for identifer EQ expr keyword:to expr (keyword:step)?
           keyword:then expr
 

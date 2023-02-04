@@ -64,6 +64,12 @@ class Lexer:
             elif self.current_char == ')':
                 tokens.append(Token(TokenType.RPAREN, pos_start=self.pos))
                 self.advance()
+            elif self.current_char == '[':
+                tokens.append(Token(TokenType.LSQAURE, pos_start=self.pos))
+                self.advance()
+            elif self.current_char == ']':
+                tokens.append(Token(TokenType.RSQUARE, pos_start=self.pos))
+                self.advance()
             elif self.current_char == ',':
                 tokens.append(Token(TokenType.COMMA, pos_start=self.pos))
                 self.advance()

@@ -214,6 +214,56 @@ class String(Value):
     def __repr__(self):
         return f'"{self.value}"'
 
+class ListValue(Value):
+    def __init__(self, elements):
+        super().__init__()
+        self.elements = elements
+    def added_to(self, other):
+        new_list = self.copy()
+        new_list.elements.append(other)
+        return new_list, None
+    def multed_by(self, other):
+        if isinstance(other, other):
+            new_list = self.copy()
+            new_list.elements.extend(other.elements)
+            return new_list, None
+        else:
+            return None, Value.illegal_operation(self, other)
+    def subbed_by(self, other):
+        if isinstance(other, Number):
+            try:
+                new_list = self.copy()
+                new_list.elements.pop(other.value)
+                return new_list, None
+            except:
+                return None, RTError(
+                    other.pos_start, other.pos_end,
+                    "Element at this index could not be removed from list, because index is out of bounds",
+                    self.context
+                )
+        else:
+            return None, Value.illegal_operation(self, other)
+
+    def dived_by(self, other):
+        if isinstance(other, Number):
+            try:
+                return self.elements[other.value], None
+            except:
+                return None, RTError(
+                    other.pos_start, other.pos_end,
+                    "Element at this index could not be retrieved from list, because index is out of bounds",
+                    self.context
+                )
+        else:
+            return None, Value.illegal_operation(self, other)
+    def copy(self):
+        copy = ListValue(self.elements[:])
+        copy.set_context(self.context)
+        copy.set_pos(self.pos_start, self.pos_end)
+        return copy
+    def __repr__(self):
+        return f"{self.elements}"
+
 class Context:
     def __init__(self, display_name, parent=None, parent_entry_pos=None):
         self.display_name = display_name
@@ -285,6 +335,16 @@ class Interpreter:
             return res.success(else_value)
         return res.success(0)
 
+    def visit_ListNode(self, node, context):
+        res = RTResult()
+        elements = []
+        for element_node in node.element_nodes:
+            elements.append(res.register(self.interpret(element_node, context)))
+            if res.error:
+                return res
+        return res.success(
+            ListValue(elements).set_context(context).set_pos(node.pos_start, node.pos_end)
+        )
     def visit_VarAssignNode(self, node, context):
         res = RTResult()
         var_name = node.var_name_token.value
