@@ -1,3 +1,4 @@
+
 from error import RTError
 from token_ import TokenType
 
@@ -223,7 +224,7 @@ class ListValue(Value):
         new_list.elements.append(other)
         return new_list, None
     def multed_by(self, other):
-        if isinstance(other, other):
+        if isinstance(other, ListValue):
             new_list = self.copy()
             new_list.elements.extend(other.elements)
             return new_list, None
@@ -262,7 +263,7 @@ class ListValue(Value):
         copy.set_pos(self.pos_start, self.pos_end)
         return copy
     def __repr__(self):
-        return f"{self.elements}"
+        return f"[{', '.join([str(x) for x in self.elements])}]"
 
 class Context:
     def __init__(self, display_name, parent=None, parent_entry_pos=None):
@@ -395,6 +396,7 @@ class Interpreter:
 
     def visit_ForNode(self, node, context):
         res = RTResult()
+        elements = []
         start = res.register(self.interpret(node.start_value_node, context))
         if res.error: return res
         end = res.register(self.interpret(node.end_value_node, context))
@@ -407,20 +409,27 @@ class Interpreter:
         for x in range(start.value, end.value, step.value):
             context.symbol_table.set(node.var_name_tok.value, Number(x))
             final_res = res.register(self.interpret(node.body_value_node, context))
+            elements.append(final_res)
             if res.error: return res
         context.symbol_table.remove(node.var_name_tok.value)
-        return res.success(final_res)
+        return res.success(
+            ListValue(elements).set_context(context).set_pos(node.pos_start, node.pos_end)
+        )
 
     def visit_WhileNode(self, node, context):
         res = RTResult()
         val = res.register(self.interpret(node.condition_node, context))
         if res.error: return res
         final_res = None
+        elements = []
         while val.value:
             final_res = res.register(self.interpret(node.body_node, context))
             if res.error: return res
             val = res.register(self.interpret(node.condition_node, context))
-        return res.success(final_res)
+            elements.append(val)
+        return res.success(
+            ListValue(elements).set_context(context).set_pos(node.pos_start, node.pos_end)
+        )
 
 
 
