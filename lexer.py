@@ -95,7 +95,7 @@ class Lexer:
     def make_identifier(self):
         id_str = ''
         pos_start = self.pos.copy()
-        while self.current_char is not None and self.current_char.isalnum():
+        while self.current_char is not None and (self.current_char.isalnum() or self.current_char == '_'):
             id_str += self.current_char
             self.advance()
         tok_type = TokenType.KEYWORD if id_str in KEYWORDS else TokenType.IDENTIFIER
