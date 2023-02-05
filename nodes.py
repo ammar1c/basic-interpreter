@@ -75,13 +75,13 @@ class IfNode:
         self.cases = cases
         self.else_case = else_case
         self.pos_start = self.cases[0][0].pos_start
-        self.pos_end = self.else_case.pos_end if self.else_case else self.cases[-1][0].pos_end
+        self.pos_end = (self.else_case if self.else_case else self.cases[-1])[0].pos_end
 
     def __repr__(self):
         return f"if {self.cases} else {self.else_case}"
 
 class ForNode:
-    def __init__(self, var_name_tok, start_value_node, end_value_node, step_value_node, body_value_node):
+    def __init__(self, var_name_tok, start_value_node, end_value_node, step_value_node, body_value_node, should_return_null):
         self.var_name_tok = var_name_tok
         self.start_value_node = start_value_node
         self.end_value_node = end_value_node
@@ -89,16 +89,19 @@ class ForNode:
         self.body_value_node = body_value_node
         self.pos_start = self.var_name_tok.pos_start
         self.pos_end = self.body_value_node.pos_end
+        self.should_return_null = should_return_null
+
     def __repr__(self):
         return f"for {self.var_name_tok} = {self.start_value_node} to {self.end_value_node} step {self.step_value_node} {self.body_value_node}"
 
 
 class WhileNode:
-    def __init__(self, condition_node, body_node):
+    def __init__(self, condition_node, body_node, should_return_null):
         self.condition_node = condition_node
         self.body_node = body_node
         self.pos_start = self.condition_node.pos_start
         self.pos_end = self.body_node.pos_end
+        self.should_return_null = should_return_null
     def __repr__(self):
         return f"while {self.condition_node} {self.body_node}"
 
@@ -112,10 +115,11 @@ class CallNode:
 
 
 class FuncDefNode:
-    def __init__(self, var_name_tok, arg_name_toks, body_node):
+    def __init__(self, var_name_tok, arg_name_toks, body_node, should_return_null):
         self.var_name_tok = var_name_tok
         self.arg_name_toks = arg_name_toks
         self.body_node = body_node
+        self.should_return_null = should_return_null
         if self.var_name_tok:
             self.pos_start = self.var_name_tok.pos_start
         elif len(self.arg_name_toks) > 0:
