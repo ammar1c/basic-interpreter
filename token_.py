@@ -25,6 +25,8 @@ class TokenType(Enum):
     STRING = 20
     LSQAURE = 21
     RSQUARE = 22
+    NEWLINE = 23
+    SEMICOLON = 24
 
 
 class Token:

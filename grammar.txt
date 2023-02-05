@@ -1,4 +1,6 @@
 
+statements: NEWLINE* expr (NEWLINE+ expr)* NEWLINE*
+
 expr: KEYWORD:VAR IDENTIFIER EQ expr
      | comp-expr ((KEYWORD:AND|KEYWORD:OR) comp-expr)*)
 comp-expr: NOT comp-expr | arith-expr ((EE|LT|GT|LTE|GTE) arith-expr)*
@@ -16,12 +18,18 @@ factor: INT|FLOAT|IDENTIFER |
         : func-def
 
 list_expr: LSQUARE (expr (COMMA IDENTIFIER)*)? RSQUARE
-for_expr: keyword:for identifer EQ expr keyword:to expr (keyword:step)?
-          keyword:then expr
 
-if-expr: KEYWORD:IF expr KEYWORD:THEN expr
-         (KEYWORD:ELIF expr KEYWORD:THEN expr)?
-         (KEYWORD:ELSE expr)?
+if-expr: KEYWORD:IF expr KEYWORD:THEN
+           (expr if-expr-b|if-expr-c?) | (NEWLINE statements KEYWORD:END|if-expr-b|if-expr-c)
 
-func-def: Keyword:fun identifier? LPAREN (IDENTIFIER (COMMA IDENTIFIER)*)? RPAREN ARROW expr
+if-expr-b: KEYWORD:ELIF expr KEYWORD:THEN
+           (expr if-expr-b|if-expr-c?) | (NEWLINE statements KEYWORD:END|if-expr-b|if-expr-c)
+if-expr-c: KEYWORD: ELSE expr | (NEWLINE statements KEYWORD:END)
+
+for-expr: KEYWORD:FOR IDENTIFIER EQ expr KEYWORD:TO expr (KEYWORD:STEP expr)?
+          KEYWORD:THEN expr | (NEWLINE statements KEYWORD:END)
+
+while-expr: KEYWORD:WHILE expr KEYWORD:THEN expr | (NEWLINE statements KEYWORD:END)
+func-def: KEYWORD:FUNC IDENTIFIER LPAREN (IDENTIFIER (COMMA IDENTIFIER)*)? RPAREN
+          KEYWORD:THEN expr | (NEWLINE statements KEYWORD:END)
 

@@ -10,6 +10,7 @@ class ParseResult:
         self.error = None
         self.node = None
         self.advance_count = 0
+        self.to_reverse_count = 0
 
     def register_advancement(self):
         self.advance_count += 1
@@ -19,6 +20,12 @@ class ParseResult:
         if res.error:
             self.error = res.error
         return res.node
+
+    def try_register(self, res):
+        if res.error:
+            self.to_reverse_count = res.advance_count
+            return None
+        return self.register(res)
 
     def success(self, node):
         self.node = node
@@ -38,9 +45,49 @@ class Parser:
 
     def advance(self):
         self.token_index += 1
-        if self.token_index < len(self.tokens):
-            self.current_token = self.tokens[self.token_index]
+        self.update_current_tok()
         return self.current_token
+
+    def reverse(self, amount=1):
+        self.token_index -= amount
+        self.update_current_tok()
+
+    def update_current_tok(self):
+        if 0 <= self.token_index < len(self.tokens):
+            self.current_token = self.tokens[self.token_index]
+
+    def statements(self):
+        res = ParseResult()
+        statements = []
+        pos_start = self.current_token.pos_start.copy()
+        while self.current_token.type == TokenType.NEWLINE:
+            res.register_advancement()
+            self.advance()
+        expr = res.register(self.expr())
+        if res.error: return res
+        statements.append(expr)
+        more_statements = True
+        while True:
+            newline_count = 0
+            while self.current_token.type == TokenType.NEWLINE:
+                res.register_advancement()
+                self.advance()
+                newline_count += 1
+            if newline_count == 0:
+                more_statements = False
+            if not more_statements:
+                break
+            stmt = res.try_register(self.expr())
+            if not stmt:
+                self.reverse(res.to_reverse_count)
+                more_statements = False
+                continue
+            statements.append(stmt)
+        return res.success(ListNode(
+            statements,
+            pos_start,
+            self.current_token.pos_end.copy()
+        ))
 
     def call(self):
         res = ParseResult()
@@ -139,7 +186,8 @@ class Parser:
                     self.current_token.pos_start, self.current_token.pos_end,
                     "Expected ')'"
                 ))
-        return res.failure(InvalidSyntaxError(toke.pos_start, toke.pos_end, "Expected int or float or identifer or FUN or WHILE or FOR or IF"))
+        return res.failure(InvalidSyntaxError(toke.pos_start, toke.pos_end,
+                                              "Expected int or float or identifer or FUN or WHILE or FOR or IF"))
 
     def if_expr(self):
         res = ParseResult()
@@ -242,7 +290,7 @@ class Parser:
                 return res
             return res.success(UnaryOpNode(op_token, node))
         node = res.register(self.bin_op(self.arith_expr, (
-        TokenType.EEQ, TokenType.NE, TokenType.LT, TokenType.GT, TokenType.LTE, TokenType.GTE)))
+            TokenType.EEQ, TokenType.NE, TokenType.LT, TokenType.GT, TokenType.LTE, TokenType.GTE)))
         if res.error:
             return res.failure(InvalidSyntaxError(
                 self.current_token.pos_start, self.current_token.pos_end,
@@ -267,7 +315,7 @@ class Parser:
         return res.success(left)
 
     def parse(self):
-        res = self.expr()
+        res = self.statements()
         if not res.error and self.current_token.type != TokenType.EOF:
             return res.failure(
                 InvalidSyntaxError(self.current_token.pos_start, self.current_token.pos_end, "Expected +-*/"))
